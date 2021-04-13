@@ -92,9 +92,12 @@ server <- function(input, output, session) {
     co2_decaystart <- df()[input$sample[1],2]
     t_decaystart <- df()[input$sample[1],1]
     co2_tdecayend <- input$co2_exterior + (co2_decaystart-input$co2_exterior)*0.37
-    co2_tdecayend
+    ## Opción para calcularlo automáticamente
+    ## co2_tdecayend <- which.min(abs(array - value))
 
-    ach <- -1*log((df()[input$sample[2],2] - input$co2_exterior)/(df()[input$sample[1],2] - input$co2_exterior))/as.numeric(df()[input$sample[2],1]-df()[input$sample[1],1])*24
+    ach <- -1*log(
+    (df()[input$sample[2],2] - input$co2_exterior)/
+    (df()[input$sample[1],2] - input$co2_exterior))/(as.numeric(df()[input$sample[2],1]-df()[input$sample[1],1])/3600)
 
     list(
       "Muestras seleccionadas para comienza decaimiento[1] & finaliza decaimiento[1] del aire en el espacio" = df()[input$sample,],
