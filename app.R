@@ -38,7 +38,7 @@ ui <- fluidPage(
       # Horizontal line ----
       tags$hr(),
       numericInput('co2_exterior',"Valor CO2 de referencia en exteriores", value= 400),
-      sliderInput('sample', 'Muestras en datos experimentales donde empieza a decaer el aire en el espacio y donde termina de decaer el aire en el espacio', min=1, max=100, value=c(1,100)),
+      sliderInput('sample', 'Muestras en datos experimentales para seleccinar ¿en dònde empieza a decaer el aire en el espacio? y ¿en dónde termina de decaer el aire en el espacio?', min=1, max=100, value=c(1,100)),
 
       a("visor desarrollado por un/loquer", href="https://github.com/daquina-io/calculo-tasa-ventilacion")
 
@@ -70,13 +70,26 @@ server <- function(input, output, session) {
         ## having a comma separator causes `read.csv` to error
         tryCatch(
         {
-          df <- read_tsv(input$file1$datapath, col_names = F)
+          df <- read.delim(input$file1$datapath, header = F)
+          df <- df[1:dim(df)[1],] %>% strsplit(" -> ") %>% unlist %>% matrix(nrow = dim(df)[1], byrow = TRUE)
+
+          idxStartMeasurements <- which(df[,2] == "Start measurements")
+          df <- df[-c(1:idxStartMeasurements), ]
+          df <- df[-which(df[,2] == "Read SenseAir S8: OK DATA"),]
+          df[,2] <- df[,2] %>% sub("CO2\\(ppm\\)\\: ","",.)
+
+          df <- df %>% as.data.frame
+          colnames(df) <- c("tiempo","CO2 [ppm]")
+          df[,"tiempo"] <- parse_time(df[,"tiempo"])
+          df[,"CO2 [ppm]"] <- as.numeric(df[,"CO2 [ppm]"])
+          df
         },
         error = function(e) {
             ## return a safeError if a parsing error occurs
             stop(safeError(e))
         }
         )
+
 
         samplesLength <- dim(df)[1]
         ## Control the value, min, max, and step.
@@ -100,8 +113,8 @@ server <- function(input, output, session) {
     (df()[input$sample[1],2] - input$co2_exterior))/(as.numeric(df()[input$sample[2],1]-df()[input$sample[1],1])/3600)
 
     list(
-      "Muestras seleccionadas para comienza decaimiento[1] & finaliza decaimiento[1] del aire en el espacio" = df()[input$sample,],
-      "Valor teórico decay_end a buscar en los datos experimentales"=co2_tdecayend,
+      "Muestras seleccionadas para comienza_decaimiento[1] & finaliza_decaimiento[2] del aire en el espacio" = df()[input$sample,],
+      "Valor teórico finaliza_decaimiento[2] a buscar en los datos experimentales"=co2_tdecayend,
       "Tiempo transcurrido en el decaimiento [seg]"=as.numeric(df()[input$sample[2],1]-df()[input$sample[1],1]),
       "ACH"=ach[[1]]
       )
@@ -115,6 +128,4 @@ server <- function(input, output, session) {
 }
 
 ## Create Shiny app ----
-## if (interactive()) {
-  shinyApp(ui, server)
-## }
+shinyApp(ui, server)
