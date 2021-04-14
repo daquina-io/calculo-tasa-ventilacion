@@ -2,6 +2,7 @@ library(shiny)
 library(readr)
 library(ggplot2)
 library(dplyr)
+library(stringr)
 
 set_color_co2 <- function(x) {
   ifelse( x < 600 , "green",
@@ -71,12 +72,14 @@ server <- function(input, output, session) {
         tryCatch(
         {
           df <- read.delim(input$file1$datapath, header = F)
-          df <- df[1:dim(df)[1],] %>% strsplit(" -> ") %>% unlist %>% matrix(nrow = dim(df)[1], byrow = TRUE)
+          df <- read.delim("./misc/Archivo real.txt", header = F)
+          
+          df <- df[1:dim(df)[1],] %>% str_split(" -> ") %>% unlist %>% matrix(nrow = dim(df)[1], byrow = TRUE)
 
           idxStartMeasurements <- which(df[,2] == "Start measurements")
           df <- df[-c(1:idxStartMeasurements), ]
           df <- df[-which(df[,2] == "Read SenseAir S8: OK DATA"),]
-          df[,2] <- df[,2] %>% sub("CO2\\(ppm\\)\\: ","",.)
+          df[,2] <- df[,2] %>% str_replace("CO2\\(ppm\\)\\: ","")
 
           df <- df %>% as.data.frame
           colnames(df) <- c("tiempo","CO2 [ppm]")
