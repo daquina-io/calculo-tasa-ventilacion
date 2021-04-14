@@ -72,8 +72,6 @@ server <- function(input, output, session) {
         tryCatch(
         {
           df <- read.delim(input$file1$datapath, header = F)
-          df <- read.delim("./misc/Archivo real.txt", header = F)
-          
           df <- df[1:dim(df)[1],] %>% str_split(" -> ") %>% unlist %>% matrix(nrow = dim(df)[1], byrow = TRUE)
 
           idxStartMeasurements <- which(df[,2] == "Start measurements")
