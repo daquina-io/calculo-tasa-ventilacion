@@ -39,8 +39,7 @@ ui <- fluidPage(
       # Horizontal line ----
       tags$hr(),
       numericInput('co2_exterior',"Valor CO2 de referencia en exteriores", value= 400),
-      sliderInput('sample', 'Muestras en datos que se deben seleccionar el comienzo del decaimiento de CO2 en el espacio y donde termina de decaer', min=1, max=100, value=c(1,100)),
-
+      sliderInput('sample', label = 'Muestras en datos que se deben seleccionar, para el comienzo del decaimiento de CO2 en el espacio y donde termina de decaer la concentración', min=1, max=100, value=c(1,100)),
       a("visor desarrollado por un/loquer", href="https://github.com/daquina-io/calculo-tasa-ventilacion")
 
     ),
@@ -81,8 +80,7 @@ server <- function(input, output, session) {
 
           df <- df %>% as.data.frame
           colnames(df) <- c("tiempo","CO2 [ppm]")
-          df[,"tiempo"] <- parse_
-          time(df[,"tiempo"])
+          df[,"tiempo"] <- parse_time(df[,"tiempo"])
           df[,"CO2 [ppm]"] <- as.numeric(df[,"CO2 [ppm]"])
           df
         },
