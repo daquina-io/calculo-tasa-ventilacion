@@ -27,17 +27,15 @@ numericInput("co2_exterior", "Valor CO2 de referencia en exteriores", value= 400
 
 sliderInput("sample", label = "Muestras en datos que se deben seleccionar, para el comienzo del decaimiento de CO2 en el espacio y donde termina de decaer la concentración:",
             min = 1, max = 100, value =c(1,100))
-            a("visor desarrollado por un/loquer", href="https://github.com/daquina-io/calculo-tasa-ventilacion")      
+            a("visor desarrollado por un/loquer", href="https://github.com/daquina-io/calculo-tasa-ventilacion")
 ```
 
 Column
 -----------------------------------------------------------------------
 
+```{r, echo=FALSE }
 
-
-```{r,  echo=FALSE }
-
-  df <- reactive({
+df <- reactive({
 
         ## input$file1 will be NULL initially. After the user selects
         ## and uploads a file, head of that data file by default,
@@ -79,8 +77,8 @@ Column
 
         df
   })
-  
 ```
+
 
 ### Cálculo de la tasa de ventilación en un espacio - ACH
 
