@@ -3,6 +3,8 @@ title: "Visor de CO2"
 output:
   flexdashboard::flex_dashboard:
     theme: readable
+    orientation: columns
+    vertical_layout: fill
 runtime: shiny
 ---
 
@@ -15,6 +17,7 @@ library(readr)
 library(ggplot2)
 library(dplyr)
 library(stringr)
+library(plotly)
 ```
 
 Column {.sidebar}
@@ -36,7 +39,6 @@ sliderInput("sample", label = "Muestras en datos que se deben seleccionar, para 
 
 Column
 -----------------------------------------------------------------------
-
 ```{r, echo=FALSE }
 ranges <- reactiveValues(x = NULL, y = NULL)
 df <- reactive({
@@ -107,15 +109,16 @@ renderValueBox({
 ### Cálculo de la tasa de ventilación en un espacio - ACH
 
 ```{r}
-plotOutput("plot1", brush = brushOpts(
-          id = "plot1_brush",
-          resetOnNew = TRUE
-          ))
-output$plot1 <-renderPlot({
-  ggplot(NULL, aes(x=tiempo,y=`CO2 [ppm]`)) +
-  geom_point(data = df()[input$sample,], size = 5, col = "red") +
-  geom_line(data= df(), col = "blue")
-})
+## plotOutput("plot1", brush = brushOpts(
+##           id = "plot1_brush",
+##           resetOnNew = TRUE
+##           ))
+## output$plot1 <-renderPlot({
+##   p <- ggplot(NULL, aes(x=tiempo,y=`CO2 [ppm]`)) +
+##   geom_point(data = df()[input$sample,], size = 5, col = "red") +
+##   geom_line(data= df(), col = "blue")
+##   ggplotly(p)
+##})
 ```
 
 ### Cálculo de la tasa de ventilación en un espacio - ACH
@@ -134,9 +137,8 @@ observe({
   })
 
 renderPlot({
-  ggplot(NULL, aes(x=tiempo,y=`CO2 [ppm]`))  + geom_line(data= df(), col = "blue")+
-  coord_cartesian(xlim = ranges$x, ylim = ranges$y, expand = FALSE)
-})
+  df() %>% plot_ly(x = ~tiempo, y = ~`CO2 [ppm]`, type = "scatter", mode = "lines")
+  })
 ```
 
 ### Indicadores
