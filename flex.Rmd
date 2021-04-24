@@ -7,6 +7,8 @@ runtime: shiny
 ```{r global, include=FALSE}
 # load data in 'global' chunk so it can be shared by all users of the dashboard
 library(shiny)
+library(flexdashboard)
+library(rmarkdown)
 library(readr)
 library(ggplot2)
 library(dplyr)
@@ -79,6 +81,26 @@ df <- reactive({
   })
 ```
 
+### ACH
+
+```{r}
+renderValueBox({
+  ach <- -1*log(
+  (df()[input$sample[2],2] - input$co2_exterior)/
+  (df()[input$sample[1],2] - input$co2_exterior))/(as.numeric(df()[input$sample[2],1]-df()[input$sample[1],1])/3600)
+ 
+  set_color_co2 <- function(x) {
+  ifelse( x < 3 , "red",
+  ifelse( x >= 3 & x < 4 , "orange",
+  ifelse( x >= 4 & x < 5, "orange",
+  ifelse( x >= 5 & x < 6, "greenyellow",
+  ifelse( x >= 6 , "green")))))
+  }
+
+  valueBox(ach, color = set_color_co2(ach), icon="fa-users")
+})
+
+```
 
 ### Cálculo de la tasa de ventilación en un espacio - ACH
 
