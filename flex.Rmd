@@ -1,6 +1,8 @@
 ---
 title: "Visor de CO2"
-output: flexdashboard::flex_dashboard
+output:
+  flexdashboard::flex_dashboard:
+    theme: readable
 runtime: shiny
 ---
 
