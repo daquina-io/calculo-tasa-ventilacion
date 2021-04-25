@@ -71,18 +71,26 @@ server <- function(input, output, session) {
         tryCatch(
         {
           df <- read.delim(input$file1$datapath, header = F)
-          df <- df[1:dim(df)[1],] %>% str_split(" -> ") %>% unlist %>% matrix(nrow = dim(df)[1], byrow = TRUE)
 
-          idxStartMeasurements <- which(df[,2] == "Start measurements")
-          df <- df[-c(1:idxStartMeasurements), ]
-          df <- df[-which(df[,2] == "Read SenseAir S8: OK DATA"),]
-          df[,2] <- df[,2] %>% str_replace("CO2\\(ppm\\)\\: ","")
+          ## Extrae los tiempos registrados para cada línea
+          timecol <- df[1:dim(df)[1],] %>% str_extract("(^[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{3})")
 
-          df <- df %>% as.data.frame
+          ## Donde no hay un tiempo de la forma hh:mm:ss.sss, descarta estas líneas
+          if(length(which(is.na(timecol))) > 0) {
+            df <- data.frame("V1"=df[-which(is.na(timecol)),])
+            timecol <- timecol[-which(is.na(timecol))]
+          } else df
+
+          ## Separa el tiempo del demás texto de cada línea para ser parseado a continuación, obteniendo los datos de concentración de CO2
+          textcol <- df[1:dim(df)[1],] %>% str_replace("(^[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{3}) ","")
+          ## Detecta las líneas con valores de CO2 
+          idxCO2 <- textcol %>% str_detect("CO2")
+          df <- data.frame(timecol[idxCO2], textcol[idxCO2] %>% str_replace("\\A.*\\: ",""))
+
           colnames(df) <- c("tiempo","CO2 [ppm]")
           df[,"tiempo"] <- parse_time(df[,"tiempo"])
           df[,"CO2 [ppm]"] <- as.numeric(df[,"CO2 [ppm]"])
-          df
+          df <- df %>% na.omit
         },
         error = function(e) {
             ## return a safeError if a parsing error occurs
@@ -91,10 +99,21 @@ server <- function(input, output, session) {
         )
 
 
-        samplesLength <- dim(df)[1]
-        ## Control the value, min, max, and step.
-        updateSliderInput(session, "sample", value = c(1,samplesLength),
-                          min = 1, max = samplesLength, step = 1)
+        samples_length <- dim(df)[1]
+        ## Calcula la ubicación en el arreglo del valor máximo
+        max_value_idx <- which(df[,2] == max(df[,2]))[1]
+        ## Calcula el valor teoríco donde termina el decaimiento de concentración de CO2
+        co2_tdecayend <- input$co2_exterior + (max(df[,2])-input$co2_exterior)*0.37
+        ## Calcula ubicación del valor más próximo en la muestra de datos
+        ## donde termina el decaimiento de la concentración de CO2
+        co2_tdecayend_idx <- which.min(abs(df[,2] - co2_tdecayend))
+        ## Si el valor donde termina el decaimiento está antes que el valor máximo
+        ## lo recalcula para las muestras a partir del valor máximo
+        if(co2_tdecayend_idx <= max_value_idx) co2_tdecayend_idx <- which.min(abs(df[max_value_idx:samples_length,2] - co2_tdecayend)) + max_value_idx
+        ## Establece en el slider el valor máximo y el final del decaimiento de CO2
+        ## actualiza estos valores en la UI
+        updateSliderInput(session, "sample", value = c(max_value_idx,co2_tdecayend_idx),
+                          min = 1, max = samples_length, step = 1)
 
         colnames(df) <- c("tiempo","CO2 [ppm]")
 
@@ -105,9 +124,10 @@ server <- function(input, output, session) {
     co2_decaystart <- df()[input$sample[1],2]
     t_decaystart <- df()[input$sample[1],1]
     co2_tdecayend <- input$co2_exterior + (co2_decaystart-input$co2_exterior)*0.37
-    ## Opción para calcularlo automáticamente
-    ## co2_tdecayend <- which.min(abs(array - value))
 
+    ## Fórmula para el cálculo de ACH
+    ## https://drive.google.com/file/d/1HwLhHk4XWmC1W1h9qFKI68KtveFufPV4/view
+    ## https://wiki.unloquer.org/personas/brolin/proyectos/agentes_calidad_aire/tasaventilacion
     ach <- -1*log(
     (df()[input$sample[2],2] - input$co2_exterior)/
     (df()[input$sample[1],2] - input$co2_exterior))/(as.numeric(df()[input$sample[2],1]-df()[input$sample[1],1])/3600)
