@@ -70,6 +70,7 @@ server <- function(input, output, session) {
         ## having a comma separator causes `read.csv` to error
         tryCatch(
         {
+          ## df <- read.delim("./misc/serial_20210526_184537.txt", header = F)
           df <- read.delim(input$file1$datapath, header = F)
 
           ## Extrae los tiempos registrados para cada línea
@@ -83,9 +84,9 @@ server <- function(input, output, session) {
 
           ## Separa el tiempo del demás texto de cada línea para ser parseado a continuación, obteniendo los datos de concentración de CO2
           textcol <- df[1:dim(df)[1],] %>% str_replace("(^[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]{3}) ","")
-          ## Detecta las líneas con valores de CO2 
-          idxCO2 <- textcol %>% str_detect("CO2")
-          df <- data.frame(timecol[idxCO2], textcol[idxCO2] %>% str_replace("\\A.*\\: ",""))
+          ## Detecta las líneas con valores de CO2
+          idxCO2 <- textcol %>% str_detect("CO2|OK")
+          df <- data.frame(timecol[idxCO2], textcol[idxCO2] %>% str_replace("\\A.*\\: |OK ",""))
 
           colnames(df) <- c("tiempo","CO2 [ppm]")
           df[,"tiempo"] <- parse_time(df[,"tiempo"])
